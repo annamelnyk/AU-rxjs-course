@@ -31,25 +31,36 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     const http$ = createHttpObservable("/api/courses");
 
+    // this is blueprint of retrieving values (not an api call)
     const courses$: Observable<Course[]> = http$.pipe(
-      map((response) => Object.values(response["payload"]))
+      // tap() operator is used to produce side effects in observable chain
+      // (if we need update smth outside of observable chain or logging statement, etc)
+      tap(() => console.log("Http request")),
+      map((response) => Object.values(response["payload"])),
+      // shareReplay handles that this http response will pass to each subscription
+      shareReplay<Course[]>()
     );
 
+    // each subscribe - is api call (each subscribe creates completely new stream)
     this.beginnerCourses$ = courses$.pipe(
       map((courses) => {
-        return courses.filter((course: Course) => course.category === "BEGINNER");
+        return courses.filter(
+          (course: Course) => course.category === "BEGINNER"
+        );
       })
     );
 
     this.advancedCourses$ = courses$.pipe(
-        map((courses) => {
-          return courses.filter((course: Course) => course.category === "ADVANCED");
-        })
-      );
+      map((courses) => {
+        return courses.filter(
+          (course: Course) => course.category === "ADVANCED"
+        );
+      })
+    );
 
-    courses$.subscribe(
-      // such approach increased code reading complexity
-      // this is an imperative approach, preferable to use instaed Reactive Design
+    // courses$.subscribe(
+    // such approach increased code reading complexity
+    // this is an imperative approach, preferable to use instaed Reactive Design
     //   (courses: Course[]) => {
     //     this.beginnerCourses = courses.filter(
     //       (course: Course) => course.category === "BEGINNER"
@@ -58,8 +69,8 @@ export class HomeComponent implements OnInit {
     //       (course: Course) => course.category === "ADVANCED"
     //     );
     //   },
-      noop, // noop === no operations
-      () => console.log("completed")
-    );
+    //  noop, // noop === no operations
+    //  () => console.log("completed")
+    //);
   }
 }

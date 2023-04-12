@@ -1,6 +1,15 @@
 import { Component, OnInit, ViewEncapsulation } from "@angular/core";
 import { response } from "express";
-import { timer, interval, fromEvent, Observable, noop } from "rxjs";
+import {
+  timer,
+  interval,
+  fromEvent,
+  Observable,
+  noop,
+  of,
+  concat,
+  merge,
+} from "rxjs";
 import { map } from "rxjs/operators";
 import { createHttpObservable } from "../common/util";
 
@@ -36,6 +45,24 @@ export class AboutComponent implements OnInit {
     //     () => console.log("completed")
     //   );
 
-    
+    // rxjs-observable-concatenation
+    // of operator defines any kind of observables
+    // const source1$ = of(1, 2, 3);
+    // const source2$ = of(4, 5, 6);
+    // const source3$ = of(7, 8, 9);
+
+    // const result$ = concat(source1$, source2$, source3$);
+    // result$.subscribe(x => console.log(x))
+
+    // merge operator
+    // merge is ideal performing for long operations in parallel and
+    // getting the result of each operation combining them
+    // (for http requests in parellel) 
+    const interval1$ = interval(1000);
+    const interval2$ = interval1$.pipe(map((val) => val * 10));
+
+    const result$ = merge(interval1$, interval2$);
+
+    result$.subscribe(console.log);
   }
 }
