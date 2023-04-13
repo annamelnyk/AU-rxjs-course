@@ -57,12 +57,24 @@ export class AboutComponent implements OnInit {
     // merge operator
     // merge is ideal performing for long operations in parallel and
     // getting the result of each operation combining them
-    // (for http requests in parellel) 
-    const interval1$ = interval(1000);
-    const interval2$ = interval1$.pipe(map((val) => val * 10));
+    // (for http requests in parellel)
+    // const interval1$ = interval(1000);
+    // const interval2$ = interval1$.pipe(map((val) => val * 10));
 
-    const result$ = merge(interval1$, interval2$);
+    // const result$ = merge(interval1$, interval2$);
 
-    result$.subscribe(console.log);
+    // result$.subscribe(console.log);
+
+    // Unsubscription
+    // const interval$ = interval(1000);
+    // const sub = interval$.subscribe(console.log);
+
+    // setTimeout(() => sub.unsubscribe(),5000);
+
+    // http cancellation
+    const http$ = createHttpObservable("/api/courses");
+    const sub = http$.subscribe(console.log);
+
+    setTimeout(() => sub.unsubscribe(), 0);
   }
 }

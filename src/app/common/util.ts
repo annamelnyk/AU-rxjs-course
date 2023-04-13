@@ -4,7 +4,10 @@ import { Observable } from "rxjs";
 // this is just a definition of http stream
 export function createHttpObservable(url: string) {
   return new Observable((observer) => {
-    fetch(url)
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    fetch(url, { signal })
       .then((response) => response.json())
       .then((body) => {
         // console.log(body)
@@ -14,5 +17,8 @@ export function createHttpObservable(url: string) {
       .catch((err) => {
         observer.error(err);
       });
+
+    // fetch cancellation (of http request)
+    return () => controller.abort();
   });
 }
