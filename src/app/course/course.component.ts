@@ -33,6 +33,7 @@ import { FromEventTarget } from "rxjs/internal/observable/fromEvent";
 export class CourseComponent implements OnInit, AfterViewInit {
   course$: Observable<any>;
   lessons$: Observable<any>;
+  courseId: string;
 
   @ViewChild("searchInput", { static: true, read: ElementRef })
   input: ElementRef;
@@ -40,25 +41,35 @@ export class CourseComponent implements OnInit, AfterViewInit {
   constructor(private route: ActivatedRoute) {}
 
   ngOnInit() {
-    const courseId = this.route.snapshot.params["id"];
-
-    this.course$ = createHttpObservable(`/api/courses/${courseId}`);
-    this.lessons$ = createHttpObservable(
-      `/api/lessons?courseId=${courseId}&pageSize=100`
-    ).pipe(map((res) => res["payload"]));
+    this.courseId = this.route.snapshot.params["id"];
+    this.course$ = createHttpObservable(`/api/courses/${this.courseId}`);
+    this.lessons$ = this.loadLessons();
   }
 
   ngAfterViewInit() {
     // implementing searh
 
     //defining the event stream
-    fromEvent<any>(this.input.nativeElement, "keyup")
+    const searchLessons$ = fromEvent<any>(this.input.nativeElement, "keyup")
       .pipe(
         map((event) => event.target.value),
         debounceTime(400),
         // removes duplications
-        distinctUntilChanged()
+        distinctUntilChanged(),
+        // concat map doesn suit here because we want to cancel ongoing request immidiately and make new one,
+        // but with concat all requets will be occured one by another
+        //concatMap(search => this.loadLessons(search))
+
+        switchMap(search => this.loadLessons(search))
       )
-      .subscribe(console.log);
+
+      const initialLessons$ = this.loadLessons();
+      this.lessons$ = concat(initialLessons$, searchLessons$);
+  }
+
+  loadLessons(search = ''): Observable<Lesson[]> {
+    return createHttpObservable(
+      `/api/lessons?courseId=${this.courseId}&pageSize=100&filter=${search}`
+    ).pipe(map((res) => res["payload"]));
   }
 }

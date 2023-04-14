@@ -1,6 +1,6 @@
 import { Component, OnInit } from "@angular/core";
 import { Course } from "../model/course";
-import { interval, Observable, of, timer, noop } from "rxjs";
+import { interval, Observable, of, timer, noop, throwError } from "rxjs";
 import {
   catchError,
   delayWhen,
@@ -8,6 +8,7 @@ import {
   retryWhen,
   shareReplay,
   tap,
+  finalize,
 } from "rxjs/operators";
 import { createHttpObservable } from "../common/util";
 
@@ -33,12 +34,31 @@ export class HomeComponent implements OnInit {
 
     // this is blueprint of retrieving values (not an api call)
     const courses$: Observable<Course[]> = http$.pipe(
+      // recovery observable error handling strategy (in of([]) we can pass
+      // data from static bd to show data to display)
+      //catchError(err => of([]))
+
+      // The Catch and Rethrow RxJs Error Handling Strategy and the finalize Operator
+      // catchError((err) => {
+      //   console.log("Error occured ", err);
+      //   return throwError(err);
+      // }),
+      // finalize(() => console.log("Finalize executed")),
+      
       // tap() operator is used to produce side effects in observable chain
       // (if we need update smth outside of observable chain or logging statement, etc)
       tap(() => console.log("Http request")),
       map((response) => Object.values(response["payload"])),
+      
       // shareReplay handles that this http response will pass to each subscription
-      shareReplay<Course[]>()
+      shareReplay<Course[]>(),
+
+      //The Retry RxJs Error Handling Strategy
+      retryWhen(errors => errors.pipe(
+        // after each error we are waiting for 2sec, then 
+        // it will subscribe again to new observable and make new http request
+        delayWhen(() => timer(2000))
+        ))
     );
 
     // each subscribe - is api call (each subscribe creates completely new stream)
